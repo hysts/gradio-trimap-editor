@@ -1,0 +1,22 @@
+[project]
+name = "showcase"
+version = "0.1.0"
+description = "Basic TrimapEditor component showcase"
+requires-python = ">=3.12"
+dependencies = [
+    "trimap-editor",
+]
+
+[tool.uv.sources]
+trimap-editor = { path = "../../", editable = true }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.2",
+]
+
+[tool.ruff]
+extend = "../../pyproject.toml"
+
+[tool.ruff.lint.per-file-ignores]
+"app.py" = ["INP001"]

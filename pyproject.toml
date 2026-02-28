@@ -1,0 +1,81 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "trimap-editor"
+version = "0.1.0"
+description = "Custom Gradio component for drawing trimap masks on images"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = [
+    "gradio>=6.8.0",
+    "pillow>=12.1.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/trimap_editor"]
+
+[tool.ruff]
+line-length = 119
+extend-exclude = ["*.pyi"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "ANN401",  # any-type — needed for **kwargs forwarded to gr.HTML
+    "COM812",  # missing-trailing-comma
+    "D203",    # one-blank-line-before-class
+    "D213",    # multi-line-summary-second-line
+    "E501",    # line-too-long
+    "INP001",  # implicit-namespace-package — demo/ is a scripts dir
+    "SIM117",  # multiple-with-statements
+    #
+    "D100",    # undocumented-public-module
+    "D101",    # undocumented-public-class
+    "D102",    # undocumented-public-method
+    "D103",    # undocumented-public-function
+    "D104",    # undocumented-public-package
+    "D105",    # undocumented-magic-method
+    "D107",    # undocumented-public-init
+    "EM101",   # raw-string-in-exception
+    "FBT001",  # boolean-type-hint-positional-argument
+    "FBT002",  # boolean-default-value-positional-argument
+    "ISC001",  # single-line-implicit-string-concatenation
+    "PGH003",  # blanket-type-ignore
+    "PLR0913", # too-many-arguments
+    "PLR0915", # too-many-statements
+    "TRY003",  # raise-vanilla-args
+]
+unfixable = [
+    "F401", # unused-import
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "ANN",     # annotations not required in test files
+    "S101",    # assert is the pytest idiom
+    "PLR2004", # magic values in test comparisons are fine
+]
+"demo/*" = [
+    "ANN",     # annotations not required in demo scripts
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.pytest.ini_options]
+addopts = "-n auto"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.2",
+    "pytest>=9.0.2",
+    "pytest-xdist>=3.8.0",
+    "playwright>=1.58.0",
+]

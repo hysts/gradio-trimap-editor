@@ -1,0 +1,25 @@
+[project]
+name = "vitmatte"
+version = "0.1.0"
+description = "ViTMatte demo using TrimapEditor for trimap input"
+requires-python = ">=3.12"
+dependencies = [
+    "trimap-editor",
+    "spaces>=0.47.0",
+    "torch==2.9.1",
+    "transformers>=5.2.0",
+]
+
+[tool.uv.sources]
+trimap-editor = { path = "../../", editable = true }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.2",
+]
+
+[tool.ruff]
+extend = "../../pyproject.toml"
+
+[tool.ruff.lint.per-file-ignores]
+"app.py" = ["INP001"]

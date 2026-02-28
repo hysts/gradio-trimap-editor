@@ -1,0 +1,616 @@
+/* ── Trimap Editor — all rules scoped under .trimap-editor ── */
+
+.trimap-editor,
+.trimap-editor * {
+    box-sizing: border-box;
+}
+
+.trimap-editor {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+    width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    outline: none;
+    background: var(--background-fill-primary, #fff);
+}
+
+/* ── Maximized overlay ── */
+
+/* te-maximized is set on the Gradio wrapper (outside morph scope)
+   so the DOM diff cannot strip it and cause a layout flash.
+   The & anchor targets the scoping element (#html-xxxxx) itself,
+   so &.te-maximized matches when the wrapper has that class. */
+&.te-maximized .trimap-editor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    background: var(--background-fill-primary, #fff);
+    padding: 0;
+    overflow: hidden;
+}
+
+&.te-maximized .trimap-editor .te-canvas-wrapper {
+    flex: 1;
+    min-height: 0;
+    border-radius: 0;
+}
+
+&.te-maximized .trimap-editor .te-toolbar {
+    flex-shrink: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+}
+
+/* ── Toolbar ── */
+
+.trimap-editor .te-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 8px;
+    background: var(--background-fill-secondary, #f7f7f7);
+    border: 1px solid var(--border-color-primary, #e0e0e0);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+}
+
+.trimap-editor .te-toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.trimap-editor .te-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.trimap-editor .te-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border-color-primary, #d0d0d0);
+    margin: 0 2px;
+    flex-shrink: 0;
+}
+
+.trimap-editor .te-spacer {
+    flex: 1;
+    width: auto;
+    background: none;
+}
+
+.trimap-editor .te-label {
+    font-size: 11px;
+    color: var(--body-text-color-subdued, #888);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── Toolbar Buttons ── */
+
+.trimap-editor .te-btn {
+    all: unset;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--body-text-color, #333);
+    background: var(--background-fill-primary, #fff);
+    border: 1px solid var(--border-color-primary, #d0d0d0);
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.trimap-editor .te-btn:hover {
+    background: var(--background-fill-secondary, #f0f0f0);
+}
+
+.trimap-editor .te-btn.active {
+    background: var(--color-accent, #2196F3);
+    border-color: var(--color-accent, #2196F3);
+    color: #fff;
+}
+
+.trimap-editor .te-btn-icon {
+    padding: 0 8px;
+    font-size: 14px;
+}
+
+.trimap-editor .te-btn-danger {
+    color: #c0392b;
+    border-color: #e8a9a3;
+}
+
+.trimap-editor .te-btn-danger:hover {
+    background: #fdecea;
+    border-color: #c0392b;
+}
+
+.trimap-editor .te-btn-danger-confirm {
+    background: #c0392b;
+    color: #fff;
+    border-color: #c0392b;
+}
+
+.trimap-editor .te-btn-danger-confirm:hover {
+    background: #a93226;
+    border-color: #a93226;
+}
+
+.trimap-editor .te-btn-primary {
+    background: var(--color-accent, #2196F3);
+    border-color: var(--color-accent, #2196F3);
+    color: #fff;
+}
+
+.trimap-editor .te-btn-primary:hover {
+    opacity: 0.85;
+}
+
+.trimap-editor .te-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ── Grouped panels ── */
+
+.trimap-editor .te-panel {
+    display: grid;
+    align-items: center;
+    row-gap: 3px;
+    column-gap: 6px;
+    padding: 5px 8px;
+    background: var(--background-fill-primary, #fff);
+    border: 1px solid var(--border-color-primary, #d0d0d0);
+    border-radius: 5px;
+    flex-shrink: 0;
+}
+
+/* layer panel: btn | eye | swatch | slider | val */
+.trimap-editor .te-layer-panel {
+    grid-template-columns: max-content max-content max-content 80px max-content;
+}
+
+/* tool panel: btn | slider | val */
+.trimap-editor .te-tool-panel {
+    grid-template-columns: max-content 80px max-content;
+}
+
+/* Bucket (fill) button spans the full tool-panel row */
+.trimap-editor .te-tool-panel [data-tool="bucket"] {
+    grid-column: 1 / -1;
+}
+
+/* Align panel buttons to the left so text doesn't jump */
+.trimap-editor .te-panel .te-btn {
+    justify-content: flex-start;
+}
+
+/* ── Slider ── */
+
+.trimap-editor .te-size-group,
+.trimap-editor .te-alpha-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.trimap-editor .te-size-val,
+.trimap-editor .te-alpha-val {
+    font-size: 11px;
+    color: var(--body-text-color-subdued, #888);
+    min-width: 28px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.trimap-editor .te-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 4px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.trimap-editor .te-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--color-accent, #2196F3);
+    cursor: pointer;
+    margin-top: -4.5px;
+}
+
+.trimap-editor .te-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border-color-primary, #d0d0d0);
+}
+
+.trimap-editor .te-slider::-moz-range-thumb {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--color-accent, #2196F3);
+    cursor: pointer;
+    border: none;
+}
+
+.trimap-editor .te-slider::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border-color-primary, #d0d0d0);
+}
+
+/* ── Canvas wrapper ── */
+
+.trimap-editor .te-canvas-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 200px;
+    height: 500px;
+    background: #1a1a1a;
+    border: 1px solid var(--border-color-primary, #e0e0e0);
+    border-radius: 0 0 6px 6px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+&.te-maximized .trimap-editor .te-canvas-wrapper {
+    height: auto;
+}
+
+.trimap-editor .te-canvas {
+    display: block;
+    cursor: default;
+    /* canvas dimensions set by JS; cursor set dynamically */
+}
+
+/* Hide canvas when no image loaded */
+.trimap-editor .te-canvas-wrapper:not(.te-has-image) .te-canvas {
+    display: none;
+}
+
+/* ── Remove image button (top-right overlay) ── */
+
+.trimap-editor .te-remove-btn {
+    all: unset;
+    display: none;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 3;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 13px;
+    line-height: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.trimap-editor .te-remove-btn:hover {
+    background: rgba(192, 57, 43, 0.85);
+}
+
+.trimap-editor .te-canvas-wrapper.te-has-image .te-remove-btn {
+    display: block;
+}
+
+/* ── Upload hint ── */
+
+.trimap-editor .te-upload-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Hide upload hint when image is loaded */
+.trimap-editor .te-canvas-wrapper.te-has-image .te-upload-hint {
+    display: none;
+}
+
+.trimap-editor .te-file-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    pointer-events: all;
+    top: 0;
+    left: 0;
+}
+
+/* Hide file input when image loaded (canvas handles drag/click) */
+.trimap-editor .te-canvas-wrapper.te-has-image .te-file-input {
+    display: none;
+}
+
+.trimap-editor .te-upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--body-text-color-subdued, #888);
+    cursor: pointer;
+    pointer-events: none;
+}
+
+.trimap-editor .te-upload-icon {
+    font-size: 36px;
+    opacity: 0.6;
+}
+
+.trimap-editor .te-upload-text {
+    font-size: 13px;
+}
+
+/* ── Color swatch + palette ── */
+
+.trimap-editor .te-color-swatch {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 2px solid var(--border-color-primary, #d0d0d0);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 0.15s;
+}
+
+/* Default swatch colors — set via CSS (not inline style) so DOM morph
+   resets to a sane default.  syncUIState() overwrites from JS state. */
+.trimap-editor #te-fg-color { background: #00c853; }
+.trimap-editor #te-unknown-color { background: #2196F3; }
+
+.trimap-editor .te-color-swatch:hover {
+    border-color: var(--body-text-color, #333);
+}
+
+.trimap-editor .te-color-palette {
+    position: absolute;
+    z-index: 100;
+    background: var(--background-fill-primary, #fff);
+    border: 1px solid var(--border-color-primary, #d0d0d0);
+    border-radius: 6px;
+    padding: 6px;
+    display: none;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.trimap-editor .te-color-palette.te-visible {
+    display: grid;
+}
+
+.trimap-editor .te-palette-item {
+    display: block;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.12s, transform 0.12s;
+}
+
+.trimap-editor .te-palette-item:hover {
+    border-color: var(--body-text-color, #333);
+    transform: scale(1.15);
+}
+
+.trimap-editor .te-palette-item.te-selected {
+    border-color: var(--color-accent, #2196F3);
+}
+
+/* White swatch needs visible border */
+.trimap-editor .te-palette-item[data-color="#ffffff"] {
+    border-color: var(--border-color-primary, #d0d0d0);
+}
+
+.trimap-editor .te-palette-item[data-color="#ffffff"]:hover {
+    border-color: var(--body-text-color, #333);
+}
+
+.trimap-editor .te-palette-item[data-color="#ffffff"].te-selected {
+    border-color: var(--color-accent, #2196F3);
+}
+
+/* ── Visibility toggle (eye icon) ── */
+
+.trimap-editor .te-vis-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--body-text-color-subdued, #888);
+    flex-shrink: 0;
+}
+
+.trimap-editor .te-vis-btn:hover {
+    color: var(--body-text-color, #333);
+}
+
+.trimap-editor .te-vis-btn svg {
+    display: block;
+}
+
+/* Show open eye by default, hide slash eye */
+.trimap-editor .te-vis-btn .te-eye-off {
+    display: none;
+}
+
+/* When hidden: show slash eye, hide open eye */
+.trimap-editor .te-vis-btn.te-vis-off .te-eye-open {
+    display: none;
+}
+
+.trimap-editor .te-vis-btn.te-vis-off .te-eye-off {
+    display: block;
+}
+
+.trimap-editor .te-vis-btn.te-vis-off {
+    opacity: 0.45;
+}
+
+/* ── Toggle button (Image) ── */
+
+.trimap-editor .te-toggle-btn.active {
+    background: var(--color-accent, #2196F3);
+    border-color: var(--color-accent, #2196F3);
+    color: #fff;
+}
+
+/* ── Processing lock ── */
+
+.trimap-editor.te-processing .te-canvas-wrapper {
+    cursor: wait;
+}
+
+.trimap-editor.te-processing .te-canvas {
+    pointer-events: none;
+}
+
+.trimap-editor.te-processing .te-toolbar {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* ── Help Overlay ── */
+
+.trimap-editor .te-help-btn {
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.trimap-editor .te-help-overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+}
+
+&.te-maximized .trimap-editor .te-help-overlay {
+    position: fixed;
+}
+
+.trimap-editor .te-help-overlay.te-visible {
+    display: flex;
+}
+
+.trimap-editor .te-help-dialog {
+    background: var(--background-fill-primary, #fff);
+    border: 1px solid var(--border-color-primary, #e0e0e0);
+    border-radius: 8px;
+    padding: 16px 20px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.trimap-editor .te-help-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--body-text-color, #333);
+}
+
+.trimap-editor .te-help-close-btn {
+    all: unset;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--body-text-color-subdued, #888);
+    padding: 0 4px;
+}
+
+.trimap-editor .te-help-close-btn:hover {
+    color: var(--body-text-color, #333);
+}
+
+.trimap-editor .te-help-section {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--body-text-color-subdued, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 0 4px;
+    border-bottom: 1px solid var(--border-color-primary, #e0e0e0);
+    margin-bottom: 2px;
+}
+
+.trimap-editor .te-help-section:first-of-type {
+    padding-top: 0;
+}
+
+.trimap-editor .te-help-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    color: var(--body-text-color, #333);
+}
+
+.trimap-editor .te-help-table td {
+    padding: 3px 0;
+}
+
+.trimap-editor .te-help-table td:first-child {
+    white-space: nowrap;
+    padding-right: 16px;
+}
+
+.trimap-editor .te-help-table kbd {
+    display: inline-block;
+    background: var(--background-fill-secondary, #f3f3f3);
+    border: 1px solid var(--border-color-primary, #d0d0d0);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+/* ── Zoom badge drawn on canvas by JS — no CSS needed ── */

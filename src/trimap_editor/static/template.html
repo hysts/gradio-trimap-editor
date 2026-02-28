@@ -1,0 +1,150 @@
+<div class="trimap-editor" tabindex="0">
+  <!-- JSON value slot: updated by Gradio on every postprocess() call -->
+  <script type="application/json" class="te-data">${value}</script>
+
+  <div class="te-toolbar">
+    <div class="te-toolbar-row">
+      <!-- Layer panel: Fg and Un rows vertically aligned -->
+      <div class="te-panel te-layer-panel">
+        <button class="te-btn active" data-layer="foreground" title="Foreground layer (F)">Foreground</button>
+        <span class="te-vis-btn" id="te-fg-vis" title="Toggle foreground visibility (1)">
+          <svg class="te-eye-open" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="te-eye-off" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </span>
+        <span class="te-color-swatch" id="te-fg-color" title="Change foreground overlay color"></span>
+        <input type="range" id="te-fg-alpha" class="te-slider" min="0" max="100" value="60">
+        <span class="te-alpha-val" id="te-fg-alpha-val">60%</span>
+
+        <button class="te-btn" data-layer="unknown" title="Unknown layer (U)">Unknown</button>
+        <span class="te-vis-btn" id="te-unknown-vis" title="Toggle unknown visibility (2)">
+          <svg class="te-eye-open" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="te-eye-off" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </span>
+        <span class="te-color-swatch" id="te-unknown-color" title="Change unknown overlay color"></span>
+        <input type="range" id="te-unknown-alpha" class="te-slider" min="0" max="100" value="60">
+        <span class="te-alpha-val" id="te-unknown-alpha-val">60%</span>
+      </div>
+      <!-- Color palette popup (shared, positioned dynamically) -->
+      <div class="te-color-palette" id="te-color-palette">
+        <span class="te-palette-item" data-color="#f44336" style="background:#f44336;" title="Red"></span>
+        <span class="te-palette-item" data-color="#ff9800" style="background:#ff9800;" title="Orange"></span>
+        <span class="te-palette-item" data-color="#ffeb3b" style="background:#ffeb3b;" title="Yellow"></span>
+        <span class="te-palette-item" data-color="#00c853" style="background:#00c853;" title="Green"></span>
+        <span class="te-palette-item" data-color="#00bcd4" style="background:#00bcd4;" title="Cyan"></span>
+        <span class="te-palette-item" data-color="#2196F3" style="background:#2196F3;" title="Blue"></span>
+        <span class="te-palette-item" data-color="#9c27b0" style="background:#9c27b0;" title="Purple"></span>
+        <span class="te-palette-item" data-color="#888888" style="background:#888888;" title="Gray"></span>
+        <span class="te-palette-item" data-color="#ffffff" style="background:#ffffff;" title="White"></span>
+      </div>
+
+      <div class="te-sep"></div>
+
+      <!-- Tool panel: Brush and Eraser rows vertically aligned -->
+      <div class="te-panel te-tool-panel">
+        <button class="te-btn active" data-tool="brush" title="Brush (B)">Brush</button>
+        <input type="range" id="te-brush-size" class="te-slider" min="2" max="200" value="20">
+        <span class="te-size-val" id="te-brush-size-val">20</span>
+
+        <button class="te-btn" data-tool="eraser" title="Eraser (E)">Eraser</button>
+        <input type="range" id="te-eraser-size" class="te-slider" min="2" max="200" value="10">
+        <span class="te-size-val" id="te-eraser-size-val">10</span>
+
+        <button class="te-btn" data-tool="bucket" title="Fill (G)">Fill</button>
+      </div>
+
+      <div class="te-sep"></div>
+      <div class="te-group">
+        <button class="te-btn te-btn-icon" id="te-undo-btn" title="Undo (Ctrl+Z)">&#8630;</button>
+        <button class="te-btn te-btn-icon" id="te-redo-btn" title="Redo (Ctrl+Shift+Z)">&#8631;</button>
+      </div>
+
+      <div class="te-sep te-spacer"></div>
+
+      <div class="te-group">
+        <button class="te-btn te-toggle-btn active" id="te-image-toggle" title="Toggle image (I)">Image</button>
+        <button class="te-btn te-toggle-btn" id="te-view-trimap-btn" title="View trimap (V)">Trimap</button>
+        <button class="te-btn te-toggle-btn" id="te-view-cutout-btn" title="Cutout preview (C)">Cutout</button>
+        <button class="te-btn te-toggle-btn" id="te-cutout-invert-btn" title="Invert cutout (N)" disabled>Invert</button>
+      </div>
+      <div class="te-sep"></div>
+      <div class="te-group">
+        <button class="te-btn te-btn-icon" data-tool="pan" title="Pan (P / Space hold)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.5 0-4.3-1-5.7-2.8L3.2 14.8a2 2 0 0 1 2.7-2.7L8 14"/></svg></button>
+        <button class="te-btn te-btn-icon" id="te-fit-btn" title="Fit to view (0)">&#x2922;</button>
+        <button class="te-btn te-btn-icon" id="te-maximize-btn" title="Toggle maximize (M)">&#x26F6;</button>
+      </div>
+      <div class="te-sep"></div>
+      <div class="te-group">
+        <button class="te-btn te-btn-danger" id="te-clear-btn" title="Clear all masks">Clear</button>
+        <button class="te-btn te-btn-icon te-help-btn" title="Keyboard shortcuts (?)">?</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help overlay -->
+  <div class="te-help-overlay">
+    <div class="te-help-dialog">
+      <div class="te-help-header">
+        <span>Keyboard Shortcuts</span>
+        <button class="te-help-close-btn">&times;</button>
+      </div>
+
+      <div class="te-help-section">Layers</div>
+      <table class="te-help-table">
+        <tr><td><kbd>F</kbd></td><td>Foreground layer</td></tr>
+        <tr><td><kbd>U</kbd></td><td>Unknown layer</td></tr>
+        <tr><td><kbd>1</kbd></td><td>Toggle foreground visibility</td></tr>
+        <tr><td><kbd>2</kbd></td><td>Toggle unknown visibility</td></tr>
+      </table>
+
+      <div class="te-help-section">Tools</div>
+      <table class="te-help-table">
+        <tr><td><kbd>B</kbd></td><td>Brush</td></tr>
+        <tr><td><kbd>E</kbd></td><td>Eraser</td></tr>
+        <tr><td><kbd>G</kbd></td><td>Fill (bucket)</td></tr>
+        <tr><td><kbd>P</kbd></td><td>Pan (toggle)</td></tr>
+        <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>Decrease / increase brush size</td></tr>
+      </table>
+
+      <div class="te-help-section">View</div>
+      <table class="te-help-table">
+        <tr><td><kbd>I</kbd></td><td>Toggle image</td></tr>
+        <tr><td><kbd>V</kbd></td><td>View trimap</td></tr>
+        <tr><td><kbd>C</kbd></td><td>Cutout preview</td></tr>
+        <tr><td><kbd>N</kbd></td><td>Invert cutout</td></tr>
+        <tr><td><kbd>M</kbd></td><td>Toggle maximize</td></tr>
+      </table>
+
+      <div class="te-help-section">Navigation</div>
+      <table class="te-help-table">
+        <tr><td><kbd>+</kbd> / <kbd>-</kbd></td><td>Zoom in / out</td></tr>
+        <tr><td><kbd>0</kbd></td><td>Reset zoom (Fit button)</td></tr>
+        <tr><td><kbd>Space</kbd> hold</td><td>Temporary pan</td></tr>
+        <tr><td>Scroll wheel</td><td>Zoom at cursor</td></tr>
+        <tr><td>Right / middle drag</td><td>Pan</td></tr>
+      </table>
+
+      <div class="te-help-section">Edit</div>
+      <table class="te-help-table">
+        <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Undo</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Redo</td></tr>
+        <tr><td><kbd>X</kbd></td><td>Remove image</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Exit maximize</td></tr>
+        <tr><td><kbd>?</kbd></td><td>Show this help</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Canvas area -->
+  <div class="te-canvas-wrapper">
+    <!-- Upload hint shown when no image is loaded -->
+    <div class="te-upload-hint">
+      <input type="file" id="te-file-input" accept="image/*" class="te-file-input">
+      <label for="te-file-input" class="te-upload-label">
+        <div class="te-upload-icon">&#128247;</div>
+        <div class="te-upload-text">Click or drop an image to start</div>
+      </label>
+    </div>
+    <canvas class="te-canvas"></canvas>
+    <button class="te-remove-btn" id="te-remove-btn" title="Remove image (X)">&#x2715;</button>
+  </div>
+</div>
