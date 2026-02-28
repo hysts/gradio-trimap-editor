@@ -1,5 +1,7 @@
 # Trimap Editor
 
+[![Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Demo-blue)](https://huggingface.co/spaces/hysts/ViTMatte)
+
 A Gradio custom HTML component for drawing **trimap masks** on images, built for image-matting workflows.
 
 Built on top of [`gr.HTML`](https://www.gradio.app/docs/gradio/html) using HTML/CSS/JavaScript for rendering, with no frontend build step required.
