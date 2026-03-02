@@ -291,6 +291,9 @@
                     // Show image immediately (blank mask), then overlay trimap
                     render();
                     var trimapImg = new Image();
+                    // Enable CORS so getImageData() works on cross-origin
+                    // trimap images (e.g. HF datasets URLs in the gallery).
+                    trimapImg.crossOrigin = "anonymous";
                     trimapImg.onload = function () {
                         parseTrimapIntoCanvases(trimapImg, iw, ih);
                         updateTrimapView();
