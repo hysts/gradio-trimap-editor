@@ -493,21 +493,6 @@
     color: #fff;
 }
 
-/* ── Processing lock ── */
-
-.trimap-editor.te-processing .te-canvas-wrapper {
-    cursor: wait;
-}
-
-.trimap-editor.te-processing .te-canvas {
-    pointer-events: none;
-}
-
-.trimap-editor.te-processing .te-toolbar {
-    pointer-events: none;
-    opacity: 0.7;
-}
-
 /* ── Help Overlay ── */
 
 .trimap-editor .te-help-btn {

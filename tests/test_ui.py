@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import re
+
+import gradio as gr
 from _helpers import (
     EXAMPLES_DIR,
     RE_ACTIVE,
@@ -9,12 +12,15 @@ from _helpers import (
     RE_MAXIMIZED,
     RE_VIS_OFF,
     RE_VISIBLE,
+    GradioApp,
     get_editor_block,
     get_editor_element,
     upload_image,
     wait_for_server_upload,
 )
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Browser, Page, expect
+
+from trimap_editor import TrimapEditor
 
 
 class TestImageUpload:
@@ -1549,3 +1555,81 @@ class TestTrimapViewKey:
 
         demo_app.keyboard.press("v")
         expect(trimap_btn).not_to_have_class(RE_ACTIVE)
+
+
+# ---------------------------------------------------------------------------
+# te-processing class is never applied (dead CSS verification)
+# ---------------------------------------------------------------------------
+
+RE_PROCESSING = re.compile(r"\bte-processing\b")
+
+
+class TestProcessingClassNeverApplied:
+    """Verify that te-processing CSS class is never applied during normal use.
+
+    The style.css has .te-processing rules but JS never applies the class.
+    This confirms the CSS is dead code and safe to remove.
+    """
+
+    def test_no_te_processing_after_upload_and_draw(self, demo_app: Page):
+        block = get_editor_block(demo_app)
+        example_img = next(EXAMPLES_DIR.glob("*.jpg"))
+        upload_image(block, example_img)
+        wait_for_server_upload(demo_app)
+
+        # Draw a stroke (triggers commitValue → props.value → DOM morph)
+        canvas = block.locator(".te-canvas")
+        box = canvas.bounding_box()
+        demo_app.mouse.move(box["x"] + 60, box["y"] + 80)
+        demo_app.mouse.down()
+        demo_app.mouse.move(box["x"] + 120, box["y"] + 80, steps=6)
+        demo_app.mouse.up()
+        demo_app.wait_for_timeout(600)
+
+        # Container should never have te-processing
+        expect(block).not_to_have_class(RE_PROCESSING)
+
+    def test_no_te_processing_after_example_load(self, demo_app: Page):
+        examples_table = demo_app.locator(".gallery-item").first
+        examples_table.click()
+        demo_app.wait_for_timeout(1500)
+
+        block = get_editor_block(demo_app)
+        expect(block).not_to_have_class(RE_PROCESSING)
+
+
+# ---------------------------------------------------------------------------
+# trigger("input") fires when Python provides a new image
+# ---------------------------------------------------------------------------
+
+
+class TestTriggerInput:
+    """Verify that trigger('input') fires on new image arrival from Python.
+
+    This confirms the pattern that Gradio 6.9.0 officially supports via
+    __getattr__. The component calls trigger('input') in handleValue()
+    when a Python-provided image loads, so .input() handlers fire.
+    """
+
+    def test_input_event_fires_on_example_click(self, browser: Browser):
+        examples_dir = EXAMPLES_DIR
+        example_imgs = sorted(examples_dir.glob("*.jpg"))
+
+        with gr.Blocks() as demo:
+            editor = TrimapEditor(label="Editor")
+            status = gr.Textbox(label="Status", value="waiting")
+            editor.input(
+                fn=lambda _val: "input_fired",
+                inputs=editor,
+                outputs=status,
+            )
+            gr.Examples(
+                examples=[[[str(example_imgs[0])]]],
+                inputs=editor,
+            )
+
+        with GradioApp(demo, browser) as page:
+            # Click the example to trigger postprocess → handleValue → trigger("input")
+            page.locator(".gallery-item").first.click()
+            status_box = page.locator("textarea").first
+            expect(status_box).to_have_value("input_fired", timeout=8000)
