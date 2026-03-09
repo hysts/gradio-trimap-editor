@@ -253,3 +253,31 @@ class TestApiInfo:
         # Input direction now supports optional trimap key.
         info = editor.api_info()
         assert "trimap?" in info["description"] or "trimap" in info["description"]
+
+
+class TestExtraProps:
+    """Verify extra props (canvas_height, default colors) are accepted."""
+
+    def test_accepts_defaults(self) -> None:
+        ed = TrimapEditor()
+        assert ed is not None
+
+    def test_accepts_custom_canvas_height(self) -> None:
+        ed = TrimapEditor(canvas_height=700)
+        assert ed is not None
+
+    def test_accepts_custom_fg_color(self) -> None:
+        ed = TrimapEditor(default_fg_color="#ff0000")
+        assert ed is not None
+
+    def test_accepts_custom_unknown_color(self) -> None:
+        ed = TrimapEditor(default_unknown_color="#00ff00")
+        assert ed is not None
+
+    def test_accepts_all_custom_props(self) -> None:
+        ed = TrimapEditor(
+            canvas_height=600,
+            default_fg_color="#ff0000",
+            default_unknown_color="#00ff00",
+        )
+        assert ed is not None

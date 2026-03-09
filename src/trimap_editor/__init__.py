@@ -56,6 +56,9 @@ class TrimapEditor(gr.HTML):
         value: str | Image.Image | Path | None = None,
         *,
         label: str | None = None,
+        canvas_height: int = 500,
+        default_fg_color: str = "#00c853",
+        default_unknown_color: str = "#2196F3",
         **kwargs: Any,
     ) -> None:
         html_template = (_STATIC_DIR / "template.html").read_text(encoding="utf-8")
@@ -71,6 +74,9 @@ class TrimapEditor(gr.HTML):
             css_template=css_template,
             js_on_load=js_on_load,
             apply_default_css=False,
+            canvas_height=canvas_height,
+            default_fg_color=default_fg_color,
+            default_unknown_color=default_unknown_color,
             **kwargs,
         )
 

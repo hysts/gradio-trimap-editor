@@ -1633,3 +1633,62 @@ class TestTriggerInput:
             page.locator(".gallery-item").first.click()
             status_box = page.locator("textarea").first
             expect(status_box).to_have_value("input_fired", timeout=8000)
+
+
+# ---------------------------------------------------------------------------
+# Extra props: canvas_height, default_fg_color, default_unknown_color
+# ---------------------------------------------------------------------------
+
+
+class TestExtraProps:
+    """Verify extra props are rendered correctly in the browser."""
+
+    def test_custom_canvas_height(self, browser: Browser):
+        with gr.Blocks() as demo:
+            TrimapEditor(label="Editor", canvas_height=700)
+
+        with GradioApp(demo, browser) as page:
+            wrapper = page.locator(".te-canvas-wrapper").first
+            box = wrapper.bounding_box()
+            assert box is not None
+            assert abs(box["height"] - 700) < 2
+
+    def test_default_canvas_height(self, browser: Browser):
+        with gr.Blocks() as demo:
+            TrimapEditor(label="Editor")
+
+        with GradioApp(demo, browser) as page:
+            wrapper = page.locator(".te-canvas-wrapper").first
+            box = wrapper.bounding_box()
+            assert box is not None
+            assert abs(box["height"] - 500) < 2
+
+    def test_custom_fg_color(self, browser: Browser):
+        with gr.Blocks() as demo:
+            TrimapEditor(label="Editor", default_fg_color="#ff0000")
+
+        with GradioApp(demo, browser) as page:
+            swatch = page.locator("#te-fg-color").first
+            # CSS sets background from the prop; verify computed style
+            bg = swatch.evaluate("el => getComputedStyle(el).backgroundColor")
+            assert bg == "rgb(255, 0, 0)"
+
+    def test_custom_unknown_color(self, browser: Browser):
+        with gr.Blocks() as demo:
+            TrimapEditor(label="Editor", default_unknown_color="#00ff00")
+
+        with GradioApp(demo, browser) as page:
+            swatch = page.locator("#te-unknown-color").first
+            bg = swatch.evaluate("el => getComputedStyle(el).backgroundColor")
+            assert bg == "rgb(0, 255, 0)"
+
+    def test_default_colors_unchanged(self, browser: Browser):
+        """Default colors match the original hardcoded values."""
+        with gr.Blocks() as demo:
+            TrimapEditor(label="Editor")
+
+        with GradioApp(demo, browser) as page:
+            fg_bg = page.locator("#te-fg-color").first.evaluate("el => getComputedStyle(el).backgroundColor")
+            un_bg = page.locator("#te-unknown-color").first.evaluate("el => getComputedStyle(el).backgroundColor")
+            assert fg_bg == "rgb(0, 200, 83)"  # #00c853
+            assert un_bg == "rgb(33, 150, 243)"  # #2196F3

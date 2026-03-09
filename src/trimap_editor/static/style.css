@@ -268,7 +268,7 @@
     position: relative;
     width: 100%;
     min-height: 200px;
-    height: 500px;
+    height: ${canvas_height}px;
     background: #1a1a1a;
     border: 1px solid var(--border-color-primary, #e0e0e0);
     border-radius: 0 0 6px 6px;
@@ -388,9 +388,10 @@
 }
 
 /* Default swatch colors — set via CSS (not inline style) so DOM morph
-   resets to a sane default.  syncUIState() overwrites from JS state. */
-.trimap-editor #te-fg-color { background: #00c853; }
-.trimap-editor #te-unknown-color { background: #2196F3; }
+   resets to a sane default.  syncUIState() overwrites from JS state.
+   Values come from extra props (default_fg_color, default_unknown_color). */
+.trimap-editor #te-fg-color { background: ${default_fg_color}; }
+.trimap-editor #te-unknown-color { background: ${default_unknown_color}; }
 
 .trimap-editor .te-color-swatch:hover {
     border-color: var(--body-text-color, #333);

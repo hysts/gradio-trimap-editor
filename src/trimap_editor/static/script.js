@@ -6,8 +6,8 @@
     var MAX_ZOOM = 20;
     var ZOOM_SENSITIVITY = 0.001;
     var MAX_HISTORY = 30;
-    var DEFAULT_UNKNOWN_COLOR = "#2196F3";
-    var DEFAULT_FG_COLOR = "#00c853";
+    var DEFAULT_UNKNOWN_COLOR = props.default_unknown_color;
+    var DEFAULT_FG_COLOR = props.default_fg_color;
 
     // ── DOM refs ────────────────────────────────────────────────────
     var container    = element.querySelector(".trimap-editor");
