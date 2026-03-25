@@ -11,7 +11,6 @@
 
     // ── DOM refs ────────────────────────────────────────────────────
     var container    = element.querySelector(".trimap-editor");
-    var dataScript   = element.querySelector("script.te-data");
     var canvas       = element.querySelector(".te-canvas");
     var canvasWrapper = element.querySelector(".te-canvas-wrapper");
     var fileInput    = element.querySelector("#te-file-input");
@@ -133,9 +132,8 @@
     });
     resizeObserver.observe(canvasWrapper);
 
-    // ── MutationObserver: value updates from Python ──────────────────
-    var dataObserver = new MutationObserver(handleValue);
-    dataObserver.observe(dataScript, { childList: true, characterData: true, subtree: true });
+    // ── Watch: value updates from Python (fires only on backend changes) ─
+    watch("value", function () { handleValue(); });
 
     // ── MutationObserver: re-assert CSS classes wiped by DOM diff ───
     var containerObserver = new MutationObserver(function () {
@@ -206,16 +204,9 @@
         // (te-maximized lives on the Gradio wrapper, outside the morph scope.)
         canvasWrapper.classList.toggle("te-has-image", state.image !== null);
 
-        var raw = dataScript.textContent.trim();
+        var raw = typeof props.value === "string" ? props.value.trim() : "";
 
         if (!raw || raw === "null") {
-            // DOM may have been morphed — re-assert canvas and UI state
-            if (state.image) {
-                resizeCanvas();
-                clampPan();
-                render();
-            }
-            syncUIState();
             return;
         }
 
@@ -226,14 +217,8 @@
             return;
         }
 
-        // Our own committed value echoing back — don't reload image
-        if ("trimapBase64" in data) {
-            resizeCanvas();
-            clampPan();
-            render();
-            syncUIState();
-            return;
-        }
+        // watch() only fires on Python (backend) responses, so no echo
+        // detection is needed — "trimapBase64" check removed.
 
         // Input from Python (postprocess): {image, width, height}
         if ("image" in data) {

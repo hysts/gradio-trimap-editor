@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "trimap-editor"
-version = "0.1.0"
+version = "0.1.1"
 description = "Custom Gradio component for drawing trimap masks on images"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = [
-    "gradio>=6.9.0",
+    "gradio>=6.10.0",
     "pillow>=12.1.1",
 ]
 

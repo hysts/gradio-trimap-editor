@@ -49,7 +49,7 @@ uv add trimap-editor
 ### Requirements
 
 - Python >= 3.12
-- Gradio >= 6.8.0
+- Gradio >= 6.10.0
 - Pillow >= 12.1.1
 
 ## Quick Start
