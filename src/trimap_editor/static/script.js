@@ -644,15 +644,26 @@
         var h = unknownCanvas.height;
         if (px < 0 || px >= w || py < 0 || py >= h) return;
 
-        // Choose the active canvas to read boundaries from
-        var activeCanvas = state.layer === "foreground" ? fgCanvas : unknownCanvas;
-        var activeCtx    = state.layer === "foreground" ? fgCtx   : unknownCtx;
+        var isFg = state.layer === "foreground";
+        var activeCtx = isFg ? fgCtx : unknownCtx;
         var imgData = activeCtx.getImageData(0, 0, w, h);
         var data = imgData.data;
+        var uData = unknownCtx.getImageData(0, 0, w, h);
+        var ud = uData.data;
+        var fd = isFg ? data : fgCtx.getImageData(0, 0, w, h).data;
 
-        // If start pixel is already painted (alpha > 127), nothing to fill
-        var startIdx = (py * w + px) * 4;
-        if (data[startIdx + 3] > 127) return;
+        // Trimap class of a pixel: 0 = background, 1 = unknown, 2 = foreground.
+        // The fill covers the connected region with the same class as the start
+        // pixel, so a foreground fill stops at unknown regions as well.
+        function classAt(i) {
+            if (fd[i * 4 + 3] > 127) return 2;
+            if (ud[i * 4 + 3] > 127) return 1;
+            return 0;
+        }
+
+        // Nothing to fill if the start pixel is already painted on this layer
+        var startClass = classAt(py * w + px);
+        if (startClass === 2 || (!isFg && startClass === 1)) return;
 
         // BFS
         var visited = new Uint8Array(w * h);
@@ -675,8 +686,8 @@
                 var ni = neighbors[i];
                 if (visited[ni]) continue;
                 visited[ni] = 1;
-                // Boundary: painted pixels (alpha > 127)
-                if (data[ni * 4 + 3] > 127) continue;
+                // Boundary: pixels of a different trimap class
+                if (classAt(ni) !== startClass) continue;
                 queue.push(ni);
                 filled.push(ni);
             }
@@ -693,9 +704,7 @@
         activeCtx.putImageData(imgData, 0, 0);
 
         // fg ⊆ unknown: if foreground layer, also fill unknownCanvas
-        if (state.layer === "foreground") {
-            var uData = unknownCtx.getImageData(0, 0, w, h);
-            var ud = uData.data;
+        if (isFg) {
             for (var k = 0; k < filled.length; k++) {
                 var ui = filled[k] * 4;
                 ud[ui]     = 255;

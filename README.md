@@ -130,7 +130,7 @@ After an image is loaded, click **Load trimap** (or press `L`) to load an existi
 ### Drawing
 
 1. Select a **layer** (Foreground or Unknown) and a **tool** (Brush, Eraser, or Fill).
-2. Left-click and drag on the canvas to paint. Single-click with Fill to flood-fill connected regions.
+2. Left-click and drag on the canvas to paint. Single-click with Fill to flood-fill connected regions. Fill stays inside the trimap region you click in, so you can outline the edge with Unknown first and then fill the inside with Foreground.
 3. Adjust brush/eraser size with their respective sliders or `[` / `]` keys.
 4. Adjust overlay opacity with the alpha sliders. Click the color swatch to pick from a 9-color palette.
 5. Toggle layer visibility with the eye icons (`1` / `2` keys) or hide the base image with the Image button (`I` key).

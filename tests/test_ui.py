@@ -1774,3 +1774,55 @@ class TestTrimapFileLoad:
         assert _count_painted(demo_app) == (0, 0)
         # Button label resets after a short delay
         expect(load_btn).to_have_text("Load trimap", timeout=5000)
+
+
+_PAINT_UNKNOWN_RING_JS = """() => {
+    var el = document.querySelector('.trimap-editor');
+    var c = el._teUnknownCanvas;
+    var ctx = c.getContext('2d');
+    ctx.strokeStyle = 'rgba(255,255,255,1)';
+    ctx.lineWidth = 20;
+    ctx.beginPath();
+    ctx.arc(c.width / 2, c.height / 2, c.width / 4, 0, 2 * Math.PI);
+    ctx.stroke();
+}"""
+
+_ALPHA_AT_JS = """([name, x, y]) => {
+    var c = document.querySelector('.trimap-editor')[name];
+    return c.getContext('2d').getImageData(x, y, 1, 1).data[3];
+}"""
+
+
+class TestBucketFillBoundaries:
+    """Foreground fill should stay inside the trimap region it starts in."""
+
+    def _fill_foreground_at_center(self, page: Page, block) -> None:
+        block.locator("[data-layer='foreground']").click()
+        block.locator("[data-tool='bucket']").click()
+        box = block.locator(".te-canvas").bounding_box()
+        page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+        page.wait_for_timeout(300)
+
+    def _alpha(self, page: Page, name: str, x: int, y: int) -> int:
+        return page.evaluate(_ALPHA_AT_JS, [name, x, y])
+
+    def test_foreground_fill_stops_at_unknown(self, demo_app: Page):
+        block = get_editor_block(demo_app)
+        upload_image(block, EXAMPLES_DIR / "green_tree.jpg")  # 400x400
+        demo_app.evaluate(_PAINT_UNKNOWN_RING_JS)  # ring of radius 100 around (200, 200)
+
+        self._fill_foreground_at_center(demo_app, block)
+
+        assert self._alpha(demo_app, "_teFgCanvas", 200, 200) == 255, "inside the ring should be foreground"
+        assert self._alpha(demo_app, "_teFgCanvas", 200, 100) == 0, "the unknown ring should stay unknown"
+        assert self._alpha(demo_app, "_teUnknownCanvas", 200, 100) == 255
+        assert self._alpha(demo_app, "_teFgCanvas", 5, 5) == 0, "fill must not leak outside the ring"
+        assert self._alpha(demo_app, "_teUnknownCanvas", 5, 5) == 0
+
+    def test_foreground_fill_on_empty_mask_fills_everything(self, demo_app: Page):
+        block = get_editor_block(demo_app)
+        upload_image(block, EXAMPLES_DIR / "green_tree.jpg")
+
+        self._fill_foreground_at_center(demo_app, block)
+
+        assert _count_painted(demo_app) == (400 * 400, 400 * 400)
