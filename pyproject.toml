@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "trimap-editor"
-version = "0.1.1"
+version = "0.1.2"
 description = "Custom Gradio component for drawing trimap masks on images"
 readme = "README.md"
 license = "MIT"
