@@ -37,6 +37,8 @@
     var removeBtn       = element.querySelector("#te-remove-btn");
     var imageToggleBtn  = element.querySelector("#te-image-toggle");
     var clearBtn        = element.querySelector("#te-clear-btn");
+    var loadTrimapBtn   = element.querySelector("#te-load-trimap-btn");
+    var trimapInput     = element.querySelector("#te-trimap-input");
     var viewTrimapBtn   = element.querySelector("#te-view-trimap-btn");
     var viewCutoutBtn   = element.querySelector("#te-view-cutout-btn");
     var cutoutInvertBtn = element.querySelector("#te-cutout-invert-btn");
@@ -321,11 +323,13 @@
 
     // Parse a trimap image (0/128/255 grayscale) into unknownCanvas and fgCanvas.
     // Uses generous thresholds (>200 for fg, >64 for unknown) to tolerate slight
-    // value shifts from image format conversions.
+    // value shifts from image format conversions. A trimap whose size differs
+    // from the image is scaled with nearest-neighbor so no new values appear.
     function parseTrimapIntoCanvases(trimapImg, w, h) {
         tCanvas.width = w;
         tCanvas.height = h;
         var tc = tCanvas.getContext("2d");
+        tc.imageSmoothingEnabled = false;
         tc.drawImage(trimapImg, 0, 0, w, h);
         var trimapData = tc.getImageData(0, 0, w, h).data;
 
@@ -1280,6 +1284,63 @@
         render();
     });
 
+    // Load trimap from a local file (replaces both mask layers, undoable)
+    var loadTrimapErrorTimer = null;
+    function showLoadTrimapError(message) {
+        if (loadTrimapErrorTimer) clearTimeout(loadTrimapErrorTimer);
+        loadTrimapBtn.textContent = message;
+        loadTrimapBtn.classList.add("te-btn-danger-confirm");
+        loadTrimapErrorTimer = setTimeout(function () {
+            loadTrimapBtn.textContent = "Load trimap";
+            loadTrimapBtn.classList.remove("te-btn-danger-confirm");
+            loadTrimapErrorTimer = null;
+        }, 2500);
+    }
+
+    function openTrimapDialog() {
+        if (!state.image) return;
+        trimapInput.click();
+    }
+
+    function loadTrimapFile(file) {
+        if (!state.image || !file || !file.type.startsWith("image/")) return;
+        var targetImage = state.image;
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+            URL.revokeObjectURL(url);
+            // The image may have been replaced or removed while decoding
+            if (state.image !== targetImage) return;
+            var iw = unknownCanvas.width;
+            var ih = unknownCanvas.height;
+            var tw = img.naturalWidth;
+            var th = img.naturalHeight;
+            // Scaling is fine (e.g. the app downscaled a large image), but a
+            // different aspect ratio means the trimap belongs to another image.
+            if (Math.abs(tw * ih - th * iw) > 0.01 * th * iw) {
+                showLoadTrimapError("Size mismatch");
+                return;
+            }
+            if (state.historyIndex < 0) snapshotHistory();
+            parseTrimapIntoCanvases(img, iw, ih);
+            snapshotHistory();
+            updateTrimapView();
+            commitValue();
+            render();
+        };
+        img.onerror = function () {
+            URL.revokeObjectURL(url);
+            showLoadTrimapError("Invalid image");
+        };
+        img.src = url;
+    }
+
+    loadTrimapBtn.addEventListener("click", openTrimapDialog);
+    trimapInput.addEventListener("change", function () {
+        if (this.files && this.files[0]) loadTrimapFile(this.files[0]);
+        this.value = ""; // allow re-selecting the same file
+    });
+
     // View Trimap toggle
     viewTrimapBtn.addEventListener("click", function () {
         toggleTrimapView();
@@ -1533,6 +1594,9 @@
         }
         if (e.key === "g" || e.key === "G") {
             activateTool("bucket"); e.preventDefault(); return;
+        }
+        if (e.key === "l" || e.key === "L") {
+            openTrimapDialog(); e.preventDefault(); return;
         }
         if (e.key === "x" || e.key === "X") {
             removeImage(); e.preventDefault(); return;

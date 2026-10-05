@@ -18,6 +18,7 @@ from _helpers import (
     upload_image,
     wait_for_server_upload,
 )
+from PIL import Image
 from playwright.sync_api import Browser, Page, expect
 
 from trimap_editor import TrimapEditor
@@ -1692,3 +1693,84 @@ class TestExtraProps:
             un_bg = page.locator("#te-unknown-color").first.evaluate("el => getComputedStyle(el).backgroundColor")
             assert fg_bg == "rgb(0, 200, 83)"  # #00c853
             assert un_bg == "rgb(33, 150, 243)"  # #2196F3
+
+
+_COUNT_PAINTED_JS = """(name) => {
+    var c = document.querySelector('.trimap-editor')[name];
+    var d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    var count = 0;
+    for (var i = 3; i < d.length; i += 4) {
+        if (d[i] > 0) count++;
+    }
+    return count;
+}"""
+
+
+def _count_painted(page: Page) -> tuple[int, int]:
+    """Return (unknown, foreground) painted pixel counts of the mask canvases."""
+    return page.evaluate(_COUNT_PAINTED_JS, "_teUnknownCanvas"), page.evaluate(_COUNT_PAINTED_JS, "_teFgCanvas")
+
+
+def _expected_counts(trimap: Image.Image) -> tuple[int, int]:
+    """Return (unknown, foreground) pixel counts using the editor's thresholds."""
+    hist = trimap.convert("L").histogram()
+    return sum(hist[65:]), sum(hist[201:])
+
+
+class TestTrimapFileLoad:
+    """Tests for loading a trimap image file via the Load trimap button."""
+
+    def test_load_trimap_populates_canvases(self, demo_app: Page):
+        block = get_editor_block(demo_app)
+        upload_image(block, EXAMPLES_DIR / "red_circle.jpg")
+        trimap_path = EXAMPLES_DIR / "red_circle_trimap.png"
+
+        block.locator("#te-trimap-input").set_input_files(str(trimap_path))
+
+        expected = _expected_counts(Image.open(trimap_path))
+        demo_app.wait_for_function(f"() => ({_COUNT_PAINTED_JS})('_teUnknownCanvas') > 0")
+        assert _count_painted(demo_app) == expected
+        expect(block.locator("#te-undo-btn")).to_be_enabled()
+
+    def test_undo_reverts_trimap_load(self, demo_app: Page):
+        block = get_editor_block(demo_app)
+        upload_image(block, EXAMPLES_DIR / "red_circle.jpg")
+
+        block.locator("#te-trimap-input").set_input_files(str(EXAMPLES_DIR / "red_circle_trimap.png"))
+        demo_app.wait_for_function(f"() => ({_COUNT_PAINTED_JS})('_teUnknownCanvas') > 0")
+
+        block.focus()
+        demo_app.keyboard.press("Control+z")
+        demo_app.wait_for_timeout(200)
+        assert _count_painted(demo_app) == (0, 0)
+
+    def test_smaller_trimap_is_scaled_without_new_values(self, demo_app: Page, tmp_path):
+        """A trimap with the same aspect ratio is scaled with nearest-neighbor."""
+        block = get_editor_block(demo_app)
+        upload_image(block, EXAMPLES_DIR / "red_circle.jpg")
+        small = Image.open(EXAMPLES_DIR / "red_circle_trimap.png").resize((200, 200), Image.Resampling.NEAREST)
+        small_path = tmp_path / "small_trimap.png"
+        small.save(small_path)
+
+        block.locator("#te-trimap-input").set_input_files(str(small_path))
+
+        demo_app.wait_for_function(f"() => ({_COUNT_PAINTED_JS})('_teUnknownCanvas') > 0")
+        # Exact 2x nearest upscale: every source pixel becomes a 2x2 block.
+        unknown, fg = _expected_counts(small)
+        assert _count_painted(demo_app) == (unknown * 4, fg * 4)
+
+    def test_mismatched_aspect_ratio_is_rejected(self, demo_app: Page, tmp_path):
+        block = get_editor_block(demo_app)
+        upload_image(block, EXAMPLES_DIR / "red_circle.jpg")
+        wide = Image.open(EXAMPLES_DIR / "red_circle_trimap.png").resize((400, 200))
+        wide_path = tmp_path / "wide_trimap.png"
+        wide.save(wide_path)
+
+        block.locator("#te-trimap-input").set_input_files(str(wide_path))
+
+        load_btn = block.locator("#te-load-trimap-btn")
+        expect(load_btn).to_have_text("Size mismatch")
+        expect(load_btn).to_have_class(RE_DANGER_CONFIRM)
+        assert _count_painted(demo_app) == (0, 0)
+        # Button label resets after a short delay
+        expect(load_btn).to_have_text("Load trimap", timeout=5000)

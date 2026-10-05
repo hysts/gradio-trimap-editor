@@ -30,6 +30,7 @@ The editor enforces the constraint that **foreground is always a subset of unkno
 - **Cutout preview** — visualize the foreground mask on a checkerboard, with invert toggle
 - **Keyboard shortcuts** for every action (press `?` for help)
 - **Auto-commit** — trimap data is sent to Python automatically after each stroke, fill, undo/redo, or clear
+- **Trimap file loading** — load an existing trimap image with the Load trimap button (`L`) instead of drawing from scratch
 - **`gr.Examples` support** — load images (and optionally pre-drawn trimaps) from an examples gallery
 - **Clean 3-value export** — alpha thresholding eliminates brush antialiasing artifacts
 - **No external JS dependencies** — pure Canvas API, ~1600 lines
@@ -122,6 +123,10 @@ gr.Examples(
 )
 ```
 
+### Loading a trimap file
+
+After an image is loaded, click **Load trimap** (or press `L`) to load an existing trimap image: black (0) for background, gray (128) for unknown, and white (255) for foreground. It replaces both layers and can be undone. A trimap with a different size but the same aspect ratio is scaled to the image with nearest-neighbor sampling. A trimap with a different aspect ratio is rejected.
+
 ### Drawing
 
 1. Select a **layer** (Foreground or Unknown) and a **tool** (Brush, Eraser, or Fill).
@@ -149,7 +154,7 @@ The component value is a JSON string. After drawing, it contains:
 }
 ```
 
-The `trimapBase64` key is present only after the user has drawn on the canvas. Check for its presence before processing.
+The `trimapBase64` key is present only after the user has drawn on the canvas or loaded a trimap file. Check for its presence before processing.
 
 The value is built on the client, so Gradio does not validate the `image` path the way it does for standard components. A client calling the API directly can put any server path there. Check that the path is inside `gradio.utils.get_upload_folder()` before opening it, as the Quick Start example does.
 
@@ -174,6 +179,7 @@ Press `?` while the editor is focused to see all shortcuts.
 | `Space` (hold) | Temporary pan mode |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Shift+Z` | Redo |
+| `L` | Load trimap image |
 | `X` | Remove image |
 | `Escape` | Exit maximize |
 | `?` | Show help dialog |

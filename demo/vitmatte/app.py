@@ -28,7 +28,7 @@ Image matting with Vision Transformers — accurately extract the foreground
 from an image, even tricky areas like hair and fur!
 
 1. **Upload** an image (or click an example below).
-2. **Draw** foreground (green) and unknown (blue) regions. Press **?** for shortcuts.
+2. **Draw** foreground (green) and unknown (blue) regions, or click **Load trimap** to use an existing trimap image. Press **?** for shortcuts.
 3. Click **Run** to generate the alpha matte.
 """
 

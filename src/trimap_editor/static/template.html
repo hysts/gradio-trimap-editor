@@ -71,6 +71,8 @@
       </div>
       <div class="te-sep"></div>
       <div class="te-group">
+        <button class="te-btn" id="te-load-trimap-btn" title="Load trimap image (L): black = background, gray = unknown, white = foreground">Load trimap</button>
+        <input type="file" id="te-trimap-input" accept="image/*" hidden>
         <button class="te-btn te-btn-danger" id="te-clear-btn" title="Clear all masks">Clear</button>
         <button class="te-btn te-btn-icon te-help-btn" title="Keyboard shortcuts (?)">?</button>
       </div>
@@ -124,6 +126,7 @@
       <table class="te-help-table">
         <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Undo</td></tr>
         <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Redo</td></tr>
+        <tr><td><kbd>L</kbd></td><td>Load trimap image</td></tr>
         <tr><td><kbd>X</kbd></td><td>Remove image</td></tr>
         <tr><td><kbd>Esc</kbd></td><td>Exit maximize</td></tr>
         <tr><td><kbd>?</kbd></td><td>Show this help</td></tr>
