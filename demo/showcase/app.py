@@ -6,6 +6,7 @@ from io import BytesIO
 from pathlib import Path
 
 import gradio as gr
+from gradio.utils import get_upload_folder, is_in_or_equal
 from PIL import Image
 from trimap_editor import TrimapEditor
 
@@ -26,6 +27,9 @@ def on_run(value: str | None) -> tuple[Image.Image, Image.Image]:
     image_path = d.get("image", "")
     if not image_path:
         return gr.skip(), gr.skip()
+    # The value is built on the client, so only accept files Gradio uploaded
+    if not is_in_or_equal(image_path, get_upload_folder()):
+        raise gr.Error("Invalid file path.")
     b64 = d["trimapBase64"]
     if "," in b64:
         b64 = b64.split(",", 1)[1]  # strip "data:image/png;base64," prefix

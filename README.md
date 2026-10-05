@@ -60,6 +60,7 @@ import base64
 from io import BytesIO
 
 import gradio as gr
+from gradio.utils import get_upload_folder, is_in_or_equal
 from PIL import Image
 from trimap_editor import TrimapEditor
 
@@ -75,6 +76,9 @@ def on_run(value: str | None):
     if "," in b64:
         b64 = b64.split(",", 1)[1]
 
+    # The value comes from the client, so only accept files Gradio uploaded
+    if not is_in_or_equal(d["image"], get_upload_folder()):
+        raise gr.Error("Invalid file path.")
     image = Image.open(d["image"]).convert("RGB")
     trimap = Image.open(BytesIO(base64.b64decode(b64)))
     return image, trimap
@@ -146,6 +150,8 @@ The component value is a JSON string. After drawing, it contains:
 ```
 
 The `trimapBase64` key is present only after the user has drawn on the canvas. Check for its presence before processing.
+
+The value is built on the client, so Gradio does not validate the `image` path the way it does for standard components. A client calling the API directly can put any server path there. Check that the path is inside `gradio.utils.get_upload_folder()` before opening it, as the Quick Start example does.
 
 ### Keyboard Shortcuts
 

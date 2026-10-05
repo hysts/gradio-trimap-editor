@@ -17,6 +17,7 @@ import numpy as np
 import PIL.Image
 import spaces
 import torch
+from gradio.utils import get_upload_folder, is_in_or_equal
 from transformers import VitMatteForImageMatting, VitMatteImageProcessor
 from trimap_editor import TrimapEditor
 
@@ -41,6 +42,18 @@ processor = VitMatteImageProcessor.from_pretrained(MODEL_ID)
 model = VitMatteForImageMatting.from_pretrained(MODEL_ID).to(device)
 
 
+def _check_upload_path(path: str) -> str:
+    """Reject paths outside Gradio's upload folder.
+
+    The editor value is a JSON string built by client-side JS, so it bypasses
+    the path checks Gradio applies to standard components. Without this check,
+    an API client could make the server open any image file on disk.
+    """
+    if not is_in_or_equal(path, get_upload_folder()):
+        raise gr.Error("Invalid file path.")
+    return path
+
+
 def _resize_on_upload(value: str | None) -> PIL.Image.Image:
     """Downscale the image on upload if it exceeds MAX_IMAGE_SIZE.
 
@@ -60,7 +73,7 @@ def _resize_on_upload(value: str | None) -> PIL.Image.Image:
         return gr.skip()
     # .change() receives raw postprocess() values which still have the
     # Gradio file-serving prefix (JS strips it only in commitValue()).
-    image_path = image_url.removeprefix("/gradio_api/file=")
+    image_path = _check_upload_path(image_url.removeprefix("/gradio_api/file="))
     image = PIL.Image.open(image_path).convert("RGB")
     scale = MAX_IMAGE_SIZE / max(w, h)
     new_w, new_h = int(w * scale), int(h * scale)
@@ -78,7 +91,7 @@ def _parse_editor(value: str | None) -> tuple[PIL.Image.Image, PIL.Image.Image]:
     image_url = d.get("image", "")
     if not image_url:
         raise gr.Error("No image loaded.")
-    image = PIL.Image.open(image_url).convert("RGB")
+    image = PIL.Image.open(_check_upload_path(image_url)).convert("RGB")
 
     # Trimap: prefer trimapBase64 (user-drawn), fall back to trimap URL (from example)
     if "trimapBase64" in d:
@@ -87,7 +100,7 @@ def _parse_editor(value: str | None) -> tuple[PIL.Image.Image, PIL.Image.Image]:
             b64 = b64.split(",", 1)[1]
         trimap = PIL.Image.open(BytesIO(base64.b64decode(b64))).convert("L")
     elif "trimap" in d:
-        trimap = PIL.Image.open(d["trimap"]).convert("L")
+        trimap = PIL.Image.open(_check_upload_path(d["trimap"])).convert("L")
     else:
         raise gr.Error("Draw a trimap first (mark foreground and unknown regions).")
 
@@ -186,13 +199,13 @@ with gr.Blocks() as demo:
         fn=_resize_on_upload,
         inputs=editor,
         outputs=editor,
-        api_name=False,
+        api_visibility="private",
     )
     apply_bg.change(
         fn=lambda checked: (gr.Image(visible=checked), gr.ImageSlider(visible=checked)),
         inputs=apply_bg,
         outputs=[bg_image, out_bg],
-        api_name=False,
+        api_visibility="private",
     )
 
     run_btn.click(fn=run, inputs=inputs, outputs=outputs)
